@@ -1,0 +1,130 @@
+.Hex
+{
+    position: absolute;
+    background-color: #1FD26A;
+    width:  50px;
+    height: 85px;
+    text-align:center;
+    font-size: 40px;
+    color: white;
+    line-height: 80px;
+}
+.Left
+{
+    -webkit-transform: rotate(-60deg);
+}
+.Right
+{
+    -webkit-transform: rotate(60deg);
+}
+.Base
+{
+    -webkit-transform: perspective(1600px) rotateX(60deg);
+}
+.Elem
+{
+    position: fixed;
+    width:  10px;
+    height: 60px;
+    border: solid 2px white;
+    border-radius: 5px;
+    background-color: goldenrod;
+    top: 610px;
+
+    -webkit-box-shadow: 0 0 15px goldenrod;
+}
+.Repr
+{
+    position: fixed;
+    width:  150px;
+    height: 100px;
+    border-radius: 5px;
+    border: solid white 2px;
+    text-align: center;
+    line-height: 180px;
+    font-size: 20px;
+    color: white;
+    background-position: center;
+    background-size: 75px 100px;
+    background-repeat: no-repeat;
+}
+
+.Glow_Human
+{
+    -webkit-box-shadow: 0 0 30px #16A79D;
+}
+.Glow_Orcs
+{
+    -webkit-box-shadow: 0 0 30px #CF4858;
+}
+.Glow_Elves
+{
+    -webkit-box-shadow: 0 0 30px #1FD26A;
+}
+.Glow_Dwarfs
+{
+    -webkit-box-shadow: 0 0 30px #E7512D;
+}
+.Glow_Undead
+{
+    -webkit-box-shadow: 0 0 30px #80628B;
+}
+.Glow_Button
+{
+    -webkit-box-shadow: 0 0 20px goldenrod;
+}
+#dice
+{
+    position: fixed;
+    width:  85px;
+    height: 85px;
+    left:  600px;
+    top:   600px;
+}
+
+#unit
+{
+    position: fixed;
+    width:  85px;
+    height: 85px;
+    left:  140px;
+    top:   600px;
+}
+
+#button
+{
+    position: fixed;
+    width:  200px;
+    height: 100px;
+    left:  575px;
+    top:   575px;
+    background-color: #AE841A;
+    border: solid 2px white;
+    border-radius: 10px;
+    text-align: center;
+    line-height: 100px;
+    font-size: 40px;
+    color: white;
+}
+
+.Death
+{
+    position: fixed;
+    width:   75px;
+    height:  75px;
+    visibility: hidden;
+}
+
+p
+{
+    position:  fixed;
+    color:     goldenrod;
+    font-size: 40px;
+    top:       580px;
+}
+
+body
+{
+    background-color: #2D2D2D;
+    width: 1000px;
+}

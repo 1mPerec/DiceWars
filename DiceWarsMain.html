@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="DiceWarsStyle.css"/>
+    <script src="jquery-1.11.3.min.js"></script>
+
+    <script>
+
+        //основные параметры:
+
+        var worked = false;
+        var rand = Math.random()*100;
+
+        //ширина
+        var n = 5;
+
+        var bot = 0;
+
+        //высота
+        var m = 11;
+
+        //максимальное кол-во ячеек на фракцию
+        var StartingPosessions;
+
+        var InProgress = false;
+        var FirstClick = true;
+
+        var busy = false;
+
+        var turn = 1;
+        var iter = 0;
+        if(n*m%5)
+        {
+            StartingPosessions = (n*m + (5-(n*m)%5))/5;
+        }
+        else
+        {
+            StartingPosessions = (n*m)/5;
+        }
+        var j = 0;
+        //цвет до селектора
+        var TempColor_1 = 1;
+        var TempColor_2;
+        var TempColor_3;
+
+        var Chousen_1;
+        var Selected_1;
+
+        //id ячейки на которую указывает селектор
+        var selector;
+
+        function PumpUp(Faction)
+        {
+            var elems = [];
+            document.getElementById('Repr_'+Faction.number).className += ' Glow_'+Faction.name;
+
+            for(i = 0; i < Faction.posessions; i++)
+            {
+                ready = false;
+                var elem = document.createElement('div');
+                elem.className  = 'Elem';
+                elem.style.left = (225 + i*15)+'px';
+                elems.push(elem);
+                document.body.appendChild(elem);
+            }
+            i = 0;
+            setTimeout(func, 100, Faction, elems, i);
+        }
+
+        function pumpUpAll(j)
+        {
+            ShowUnit();
+            InProgress = true;
+            HideButton();
+            switch(j)
+            {
+                case 0:
+                    PumpUp(Human);
+                    break;
+                case 1:
+                    PumpUp(Orcs);
+                    break;
+                case 2:
+                    PumpUp(Elves);
+                    break;
+                case 3:
+                    PumpUp(Dwarfs);
+                    break;
+                case 4:
+                    PumpUp(Undead);
+                    break;
+                default:
+                    HideUnit();
+                    ShowButton();
+                    InProgress = false;
+            }
+        }
+
+        function begin()
+        {
+            for(var j = 0; j < m; j++)
+            {
+                for(var i = 0; i < n; i++)
+                {
+                    var cont = document.createElement('div');
+                    var x = j*(n)+i;
+                    cont.className = 'Base';
+                    cont.id = 'DIV_'+x;
+                    document.body.appendChild(cont);
+
+                    var left = document.createElement('div');
+                    left.className = 'Hex Left';
+                    cont.appendChild(left);
+
+                    var right = document.createElement('div');
+                    right.className = 'Hex Right';
+                    cont.appendChild(right);
+
+                    var main = document.createElement('div');
+                    main.className = 'Hex';
+                    main.id        = 'Cell_'+x;
+                    main.innerHTML = 2;
+                    cont.appendChild(main);
+
+                    $(cont).children().css( "top",  (45*j+100)+'px');
+                    $(cont).children().css( "left", (156*i + 215 + j%2*78)+'px');
+                }
+            }
+        }
+
+        function func(Faction, elems, i)
+        {
+            elems[Faction.posessions-i-1].remove();
+            var r = (Math.random()*100)%(Faction.posessions);
+            r = Math.floor(r);
+            var c = Faction.cells[r];
+            var n = document.getElementById('Cell_'+c).innerHTML;
+            n = parseInt(n) + 1;
+            document.getElementById('Cell_'+c).innerHTML = n;
+
+            i++;
+
+            if(i < Faction.posessions)
+            {
+                setTimeout(func, 100, Faction, elems, i);
+            }
+            else
+            {
+                document.getElementById('Repr_'+Faction.number).className = 'Repr';
+                j++;
+                pumpUpAll(j);
+            }
+        }
+
+
+        function HideDice()
+        {
+            $('#dice').css( "visibility",  'hidden' );
+        }
+
+        function ShowDice()
+        {
+            $('#dice').css( "visibility",  'visible' );
+        }
+
+        function HideUnit()
+        {
+            $('#unit').css( "visibility",  'hidden' );
+        }
+
+        function ShowUnit()
+        {
+            $('#unit').css( "visibility",  'visible' );
+        }
+
+        function HideButton()
+        {
+            $('#button').css( "background-color", '#AE841A');
+            document.getElementById('button').className = '';
+            $('#button').css( "visibility",  'hidden' );
+        }
+
+        function ShowButton()
+        {
+            $('#button').css( "visibility",  'visible' );
+        }
+
+        function ChangeColor(color, cell)
+        {
+            $('#DIV_'+cell).children().css( "background-color", color );
+        }
+
+        function botSwitcher(bot)
+        {
+            switch(bot)
+            {
+                case 1:
+                    setTimeout(botFight, 100, Orcs, iter);
+                    break;
+                case 2:
+                    setTimeout(botFight, 100, Elves, iter);
+                    break;
+                case 3:
+                    setTimeout(botFight, 100, Dwarfs, iter);
+                    break;
+                case 4:
+                    setTimeout(botFight, 100, Undead, iter);
+                    break;
+                default:
+                    ShowButton();
+                    j = 0;
+                    iter       = 0;
+                    bot        = 0;
+                    busy       = false;
+                    InProgress = false;
+                    PumpUpAll(j);
+                    break;
+            }
+        }
+
+        function botFight(Faction, iter)
+        {
+            if(!busy)
+            {
+                var x = Faction.cells[iter];
+                var y = Faction.agency(x);
+                if(y > -1)
+                {
+                    Faction.claim(y, x);
+                }
+
+                if(iter < Faction.posessions-1)
+                {
+                    iter++;
+                    setTimeout(botFight, 100, Faction, iter);
+                }
+                else
+                {
+                    document.getElementById('Repr_'+Faction.number).className = 'Repr';
+                    iter = 0;
+                    bot++;
+                    botSwitcher(bot);
+                }
+            }
+        }
+
+        $(document).ready(function()
+        {
+            HideDice();
+            HideUnit();
+            begin();
+
+            $('#button').mouseenter(function(event)
+            {
+                $('#button').css( "background-color", 'goldenrod');
+                document.getElementById('button').className = 'Glow_Button';
+            });
+            $('#button').mouseout(function()
+            {
+                $('#button').css( "background-color", '#AE841A');
+                document.getElementById('button').className = '';
+            });
+            $('#button').click(function()
+            {
+                HideButton();
+                bot  = 1;
+                iter = 0;
+                InProgress = true;
+                botSwitcher(bot);
+            });
+
+            $('div.Base').children().mouseenter(function(event)
+            {
+                selector  = '#' + $(event.target).parent().attr('id');
+                tempColor_1 = $(selector).children().css('background-color');
+                $(selector).children().css( "background-color", 'goldenrod' );
+            });
+
+            $('div.Base').mouseout(function()
+            {
+                if(TempColor_1)
+                {
+                    selector = '#' + $(event.target).parent().attr('id');
+                    $(selector).children().css( "background-color", tempColor_1 );
+                }
+            });
+
+            $('div.Base').children().click(function(event)
+            {
+                var x = $(event.target).parent().attr('id').replace( /^\D+/g, ' ');
+                x = parseInt(x);
+                var number = document.getElementById('Cell_'+x).innerHTML;
+                number = parseInt(number)-1;
+                if(!FirstClick)
+                {
+                    var y = Selected_1.replace( /^\D+/g, ' ');
+                    y = parseInt(y);
+                }
+                if(!InProgress && FirstClick && Human.friend(x) && number)
+                {
+                    selector    = '#' + $(event.target).parent().attr('id');
+                    tempColor_2 = tempColor_1;
+                    tempColor_1 = 'goldenrod';
+                    $(selector).children().css( "background-color", 'goldenrod' );
+                    FirstClick = false;
+                    Selected_1 = '#' + $(event.target).parent().attr('id');
+                }
+                else if(!InProgress && !FirstClick && Human.friend(x) && number)
+                {
+                    $(Selected_1).children().css("background-color", tempColor_2);
+                    selector  = '#' + $(event.target).parent().attr('id');
+                    tempColor_2 = tempColor_1;
+                    tempColor_1 = 'goldenrod';
+                    $(selector).children().css( "background-color", 'goldenrod' );
+                    Selected_1 = '#' + $(event.target).parent().attr('id');
+                }
+                else if(!InProgress && !FirstClick && !Human.friend(x) && Human.reachable(x, y))
+                {
+                    selector  = '#' + $(event.target).parent().attr('id');
+                    $(selector).children().css( "background-color", 'goldenrod' );
+                    tempColor_1 = 'goldenrod';
+                    Selected_1 = '#' + $(event.target).parent().attr('id');
+                    Human.claim(x,y);
+                }
+            });
+
+            Human  = new Faction('Human' , '#16A79D', 'Human.pdf' , 0);
+            Orcs   = new Faction('Orcs'  , '#CF4858', 'Orcs.pdf'  , 1);
+            Elves  = new Faction('Elves' , '#1FD26A', 'Elves.pdf' , 2);
+            Dwarfs = new Faction('Dwarfs', '#E7512D', 'Dwarfs.pdf', 3);
+            Undead = new Faction('Undead', '#80628B', 'Undead.pdf', 4);
+
+            function Faction(name, color, imgSrc, number)
+            {
+                this.name       = name;
+                this.color      = color;
+                this.posessions = 0;
+                this.cells      = [];
+                this.imgSrc     = imgSrc;
+                this.number     = number;
+                this.neighbors  = [];
+
+                this.friend = function(x)
+                {
+                    for(var i in this.cells)
+                    {
+                        if(x === this.cells[i])
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                this.reachable = function(x, y)
+                {
+                    var reach = [];
+
+                    reach.push( x + n - (Math.floor(x/n) + 1)%2);
+                    reach.push( x - n - (Math.floor(x/n) + 1)%2);
+
+                    reach.push( x + n - (Math.floor(x/n) + 1)%2 + 1);
+                    reach.push( x - n - (Math.floor(x/n) + 1)%2 + 1);
+
+                    reach.push(x+n*2);
+                    reach.push(x-n*2);
+
+                    if(x/n%2 === 0)
+                    {
+                        reach.splice(0, 2);
+                    }
+                    else if(((x+1)/n)%2 === 0)
+                    {
+                        reach.splice(2, 2);
+                    }
+
+                    for(var i = 0; i < reach.length; i++)
+                    {
+                        if(reach[i] >= n*m || reach[i] < 0)
+                        {
+                            reach.splice(i,1);
+                            i--;
+                        }
+                    }
+
+                    for(var i = 0; i < reach.length; i++)
+                    {
+                        if(reach[i] === y)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                this.agency = function(x)
+                {
+                    this.neighbors = [];
+                    var tasty = $('#Cell_'+x).html();
+                    tasty = parseInt(tasty);
+                    var bite  = 0;
+                    var tasty_id = -1;
+
+                    this.neighbors.push( x + n - (Math.floor(x/n) + 1)%2);
+                    this.neighbors.push( x - n - (Math.floor(x/n) + 1)%2);
+
+                    this.neighbors.push( x + n - (Math.floor(x/n) + 1)%2 + 1);
+                    this.neighbors.push( x - n - (Math.floor(x/n) + 1)%2 + 1);
+
+                    this.neighbors.push(x+n*2);
+                    this.neighbors.push(x-n*2);
+
+                    if(x/n%2 === 0)
+                    {
+                        this.neighbors.splice(0, 2);
+                    }
+                    else if(((x+1)/n)%2 === 0)
+                    {
+                        this.neighbors.splice(2, 2);
+                    }
+
+                    for(var i = 0; i < this.neighbors.length; i++)
+                    {
+                        if(this.neighbors[i] >= n*m || this.neighbors[i] < 0)
+                        {
+                            this.neighbors.splice(i,1);
+                            i--;
+                        }
+                    }
+                    for(var i = 0; i < this.neighbors.length; i++)
+                    {
+                        if(this.friend(this.neighbors[i]))
+                        {
+                            this.neighbors.splice(i, 1);
+                            i--;
+                        }
+                        else
+                        {
+                            bite = document.getElementById('Cell_'+this.neighbors[i]).innerHTML;
+                            bite = parseInt(bite);
+
+                            if(bite < tasty)
+                            {
+                                tasty    = bite;
+                                tasty_id = this.neighbors[i];
+                            }
+                        }
+                    }
+                    this.neighbors = 0;
+                    return tasty_id;
+                }
+
+                this.poke = function()
+                {
+                    if(!this.posessions)
+                    {
+                        document.getElementById('Death_'+number).style.visibility = 'visible';
+                    }
+                }
+                this.claim = function(x, y)
+                {
+                    busy = true;
+                    var DiceX = throwDice(x);
+                    var DiceY = throwDice(y);
+                    ShowDice();
+                    HideButton();
+                    InProgress = true;
+                    showThrow(DiceX, DiceY, 0, 0, 20, x, y, this);
+                }
+            }
+
+            function check()
+            {
+                for(var i = 0; i < Human.posessions; i++)
+                {
+                    $('#DIV_'+Human.cells[i]).children().css('background-color',  Human.color);
+                }
+                for(var i = 0; i < Orcs.posessions; i++)
+                {
+                    $('#DIV_'+Orcs.cells[i]).children().css('background-color',   Orcs.color);
+                }
+                for(var i = 0; i < Elves.posessions; i++)
+                {
+                    $('#DIV_'+Elves.cells[i]).children().css('background-color',  Elves.color);
+                }
+                for(var i = 0; i < Dwarfs.posessions; i++)
+                {
+                    $('#DIV_'+Dwarfs.cells[i]).children().css('background-color', Dwarfs.color);
+                }
+                for(var i = 0; i < Undead.posessions; i++)
+                {
+                    $('#DIV_'+Undead.cells[i]).children().css('background-color', Undead.color);
+                }
+            }
+
+            function showThrow(DiceX, DiceY, x, y, magic, X, Y, Faction)
+            {
+                var done = true;
+
+                if(DiceX != x)
+                {
+                    x++;
+                    done = false;
+                }
+                if(DiceY != y)
+                {
+                    y++;
+                    done = false;
+                }
+
+                document.getElementById('p_1').innerHTML = y;
+                document.getElementById('p_2').innerHTML = x;
+
+                if(done)
+                {
+                    --magic;
+                }
+
+                if(magic > 0)
+                {
+                    setTimeout(showThrow, 50, DiceX, DiceY, x, y, magic, X, Y, Faction);
+                }
+                else
+                {
+                    var value = document.getElementById('Cell_'+Y).innerHTML;
+                    value = parseInt(value);
+                    HideDice();
+                    document.getElementById('p_1').innerHTML = '';
+                    document.getElementById('p_2').innerHTML = '';
+                    InProgress = false;
+                    tempColor_1 = 0;
+                    if(DiceX < DiceY)
+                    {
+                        document.getElementById('Cell_'+X).innerHTML = value - 1;
+                        takeAway(X);
+                        Faction.cells.push(X);
+                        Faction.posessions++;
+                        document.getElementById('Repr_'+Faction.number).innerHTML = Faction.posessions;
+                        ChangeColor(Faction.color, X);
+                    }
+                    ChangeColor(Faction.color, Y);
+
+                    document.getElementById('Cell_'+Y).innerHTML = 1;
+                    FirstClick = true;
+                    busy = false;
+                    if(bot)
+                    {
+                        botSwitcher(bot);
+                    }
+                    else
+                    {
+                        ShowButton();
+                        check();
+                    }
+                }
+            }
+
+            function takeAway(cell)
+            {
+                var i = Human.cells.indexOf(cell);
+                if(i > -1)
+                {
+                    Human.cells.splice(i, 1);
+                    Human.posessions--;
+                    document.getElementById('Repr_0').innerHTML = Human.posessions;
+                }
+
+                i = Orcs.cells.indexOf(cell);
+                if(i > -1)
+                {
+                    Orcs.cells.splice(i, 1);
+                    Orcs.posessions--;
+                    document.getElementById('Repr_1').innerHTML = Orcs.posessions;
+                }
+
+                i = Elves.cells.indexOf(cell);
+                if(i > -1)
+                {
+                    Elves.cells.splice(i, 1);
+                    Elves.posessions--;
+                    document.getElementById('Repr_2').innerHTML = Elves.posessions;
+                }
+
+                i = Dwarfs.cells.indexOf(cell);
+                if(i > -1)
+                {
+                    Dwarfs.cells.splice(i, 1);
+                    Dwarfs.posessions--;
+                    document.getElementById('Repr_3').innerHTML = Dwarfs.posessions;
+                }
+
+                i = Undead.cells.indexOf(cell);
+                if(i > -1)
+                {
+                    Undead.cells.splice(i, 1);
+                    Undead.posessions--;
+                    document.getElementById('Repr_4').innerHTML = Undead.posessions;
+                }
+                checkPosessions();
+            }
+
+            function throwDice(x)
+            {
+                var Dice = document.getElementById('Cell_'+x).innerHTML;
+                Dice = parseInt(Dice);
+                Dice = Math.floor(Math.random() * ((Dice*6+1) - Dice)) + Dice;
+                return Dice;
+            }
+
+            function checkPosessions()
+            {
+                document.getElementById('Repr_0').innerHTML = Human.posessions;
+                document.getElementById('Repr_1').innerHTML = Orcs.posessions;
+                document.getElementById('Repr_2').innerHTML = Elves.posessions;
+                document.getElementById('Repr_3').innerHTML = Dwarfs.posessions;
+                document.getElementById('Repr_4').innerHTML = Undead.posessions;
+
+                Human.poke();
+                Orcs.poke();
+                Elves.poke();
+                Dwarfs.poke();
+                Undead.poke();
+            }
+
+            function repr(Faction)
+            {
+                var represent  = document.createElement('div');
+                represent.style.top  = (130*Faction.number + 15) + 'px';
+                represent.style.left = (525 + n*156) + 'px';
+                represent.style.backgroundColor = Faction.color;
+                represent.className = 'Repr';
+                represent.id        = 'Repr_'+Faction.number;
+                document.body.appendChild(represent);
+
+                $(represent).css('background-image', 'url(' + Faction.imgSrc + ')');
+                var Img = document.createElement('img');
+                Img.src = 'Dead.pdf';
+                Img.id = 'Death_'+Faction.number;
+                Img.className = 'Death';
+                Img.style.top  = (130*Faction.number + 20) + 'px';
+                Img.style.left = (565 + n*156) + 'px';
+                document.body.appendChild(Img);
+            }
+
+            repr(Human);
+            repr(Orcs);
+            repr(Elves);
+            repr(Dwarfs);
+            repr(Undead);
+
+            function assignLand(Faction, i)
+            {
+                ChangeColor(Faction.color, i);
+                Faction.posessions++;
+                Faction.cells.push(i);
+            }
+
+            function assignMotherLand(rand, i)
+            {
+                worked = true;
+                if(rand<20)
+                {
+                    if(Undead.posessions < StartingPosessions)
+                    {
+                        assignLand(Undead, i);
+                    }
+                    else
+                    {
+                        worked = false;
+                        rand = 30;
+                    }
+                }
+                else if(rand<40)
+                {
+                    if(Orcs.posessions < StartingPosessions)
+                    {
+                        assignLand(Orcs, i);
+                    }
+                    else
+                    {
+                        worked = false;
+                        rand = 50;
+                    }
+                }
+                else if(rand<60)
+                {
+                    if(Elves.posessions < StartingPosessions)
+                    {
+                        assignLand(Elves, i);
+                    }
+                    else
+                    {
+                        worked = false;
+                        rand = 70;
+                    }
+                }
+                else if(rand<80)
+                {
+                    if(Dwarfs.posessions < StartingPosessions)
+                    {
+                        assignLand(Dwarfs, i);
+                    }
+                    else
+                    {
+                        worked = false;
+                        rand = 90;
+                    }
+                }
+                else
+                {
+                    if(Human.posessions < StartingPosessions)
+                    {
+                        assignLand(Human, i);
+                    }
+                    else
+                    {
+                        worked = false;
+                        rand = 10;
+                    }
+                }
+
+                if(i < n*m)
+                {
+                    if(worked)
+                    {
+                        i++;
+                        rand = Math.random()*100;
+                    }
+                    assignMotherLand(rand, i);
+                    checkPosessions();
+                }
+            }
+            i = 0;
+            j = 0;
+            assignMotherLand(rand, i);
+            pumpUpAll(j);
+        });
+
+    </script>
+
+</head>
+
+<body>
+<p style="left: 450px" id='p_1'></p>
+<p style="left: 815px" id='p_2'></p>
+<img id = 'dice', src = 'Dice.pdf'>
+<img id = 'unit', src = 'Dice.pdf'>
+<div id = 'button'>  &#9654</div>
+</body>
+</html>
